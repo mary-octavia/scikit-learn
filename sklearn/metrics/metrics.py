@@ -41,8 +41,8 @@ def _is_1d(x):
     ----------
     x : numpy array.
 
-    Return
-    ------
+    Returns
+    -------
     is_1d : boolean,
         Return True if x can be considered as a 1d vector.
 
@@ -181,8 +181,8 @@ def _check_clf_targets(y_true, y_pred):
             # 'binary' can be removed
             type_true = type_pred = 'multiclass'
 
-        y_true = np.squeeze(y_true)
-        y_pred = np.squeeze(y_pred)
+        y_true = np.ravel(y_true)
+        y_pred = np.ravel(y_pred)
 
     else:
         raise ValueError("Can't handle %s/%s targets" % (type_true, type_pred))
@@ -193,8 +193,8 @@ def _check_clf_targets(y_true, y_pred):
 def auc(x, y, reorder=False):
     """Compute Area Under the Curve (AUC) using the trapezoidal rule
 
-    This is a general fuction, given points on a curve.  For computing the area
-    under the ROC-curve, see :func:`auc_score`.
+    This is a general function, given points on a curve.  For computing the
+    area under the ROC-curve, see :func:`auc_score`.
 
     Parameters
     ----------
@@ -744,6 +744,9 @@ def confusion_matrix(y_true, y_pred, labels=None):
            [1, 0, 2]])
 
     """
+    y_true, y_pred = check_arrays(y_true, y_pred)
+    y_true, y_pred = _check_1d_array(y_true, y_pred, ravel=True)
+
     if labels is None:
         labels = unique_labels(y_true, y_pred)
     else:
@@ -1105,7 +1108,7 @@ def f1_score(y_true, y_pred, labels=None, pos_label=1, average='weighted'):
     y_true : array-like or list of labels or label indicator matrix
         Ground truth (correct) target values.
 
-    y_true : array-like or list of labels or label indicator matrix
+    y_pred : array-like or list of labels or label indicator matrix
         Estimated targets as returned by a classifier.
 
     labels : array
@@ -1196,7 +1199,7 @@ def f1_score(y_true, y_pred, labels=None, pos_label=1, average='weighted'):
     >>> f1_score(y_true, y_pred, average='macro')  # doctest: +ELLIPSIS
     0.66...
     >>> f1_score(y_true, y_pred, average='micro')  # doctest: +ELLIPSIS
-    0.80...
+    0.8...
     >>> f1_score(y_true, y_pred, average='weighted')  # doctest: +ELLIPSIS
     0.66...
     >>> f1_score(y_true, y_pred, average='samples')  # doctest: +ELLIPSIS
@@ -1226,7 +1229,7 @@ def fbeta_score(y_true, y_pred, beta, labels=None, pos_label=1,
     y_true : array-like or list of labels or label indicator matrix
         Ground truth (correct) target values.
 
-    y_true : array-like or list of labels or label indicator matrix
+    y_pred : array-like or list of labels or label indicator matrix
         Estimated targets as returned by a classifier.
 
     beta: float
@@ -1480,7 +1483,7 @@ def precision_recall_fscore_support(y_true, y_pred, beta=1.0, labels=None,
     value at 1 and worst score at 0.
 
     The F-beta score weights recall more than precision by a factor of
-    ``beta``. ``beta == 1.0`` means recall and precsion are equally important.
+    ``beta``. ``beta == 1.0`` means recall and precision are equally important.
 
     The support is the number of occurrences of each class in ``y_true``.
 
@@ -1493,7 +1496,7 @@ def precision_recall_fscore_support(y_true, y_pred, beta=1.0, labels=None,
     y_true : array-like or list of labels or label indicator matrix
         Ground truth (correct) target values.
 
-    y_true : array-like or list of labels or label indicator matrix
+    y_pred : array-like or list of labels or label indicator matrix
         Estimated targets as returned by a classifier.
 
     beta : float, 1.0 by default
@@ -1616,7 +1619,7 @@ def precision_recall_fscore_support(y_true, y_pred, beta=1.0, labels=None,
     (0.66..., 0.66..., 0.66..., None)
     >>> precision_recall_fscore_support(y_true, y_pred, average='micro')
     ... # doctest: +ELLIPSIS
-    (1.0, 0.66..., 0.80..., None)
+    (1.0, 0.66..., 0.8..., None)
     >>> precision_recall_fscore_support(y_true, y_pred, average='weighted')
     ... # doctest: +ELLIPSIS
     (0.66..., 0.66..., 0.66..., None)
@@ -1779,7 +1782,7 @@ def precision_score(y_true, y_pred, labels=None, pos_label=1,
     y_true : array-like or list of labels or label indicator matrix
         Ground truth (correct) target values.
 
-    y_true : array-like or list of labels or label indicator matrix
+    y_pred : array-like or list of labels or label indicator matrix
         Estimated targets as returned by a classifier.
 
     labels : array
@@ -1901,7 +1904,7 @@ def recall_score(y_true, y_pred, labels=None, pos_label=1, average='weighted'):
     y_true : array-like or list of labels or label indicator matrix
         Ground truth (correct) target values.
 
-    y_true : array-like or list of labels or label indicator matrix
+    y_pred : array-like or list of labels or label indicator matrix
         Estimated targets as returned by a classifier.
 
     labels : array
@@ -2389,8 +2392,8 @@ def r2_score(y_true, y_pred):
     if len(y_true) == 1:
         raise ValueError("r2_score can only be computed given more than one"
                          " sample.")
-    numerator = ((y_true - y_pred) ** 2).sum()
-    denominator = ((y_true - y_true.mean(axis=0)) ** 2).sum()
+    numerator = ((y_true - y_pred) ** 2).sum(dtype=np.float64)
+    denominator = ((y_true - y_true.mean(axis=0)) ** 2).sum(dtype=np.float64)
 
     if denominator == 0.0:
         if numerator == 0.0:

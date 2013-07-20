@@ -1,5 +1,5 @@
 """
-The :mod:`sklearn.utils` module includes various utilites.
+The :mod:`sklearn.utils` module includes various utilities.
 """
 
 from collections import Sequence
@@ -123,7 +123,7 @@ def safe_mask(X, mask):
     -------
         mask
     """
-    mask = np.asanyarray(mask)
+    mask = np.asarray(mask)
     if np.issubdtype(mask.dtype, np.int):
         return mask
 

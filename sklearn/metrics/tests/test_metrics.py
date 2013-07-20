@@ -92,7 +92,8 @@ ALL_METRICS = {
     "mean_absolute_error": mean_absolute_error,
     "mean_squared_error": mean_squared_error,
     "explained_variance_score": explained_variance_score,
-    "r2_score": r2_score
+    "r2_score": r2_score,
+    "confusion_matrix": partial(confusion_matrix, labels=range(3)),
 }
 
 METRICS_WITH_NORMALIZE_OPTION = {
@@ -139,7 +140,7 @@ MULTILABELS_METRICS = {
     "macro_recall_score": partial(recall_score, average="macro"),
 }
 
-SYMETRIC_METRICS = {
+SYMMETRIC_METRICS = {
     "accuracy_score": accuracy_score,
     "unormalized_accuracy_score": partial(accuracy_score, normalize=False),
 
@@ -162,7 +163,7 @@ SYMETRIC_METRICS = {
     "mean_squared_error": mean_squared_error
 }
 
-NOT_SYMETRIC_METRICS = {
+NOT_SYMMETRIC_METRICS = {
     "explained_variance_score": explained_variance_score,
     "r2_score": r2_score,
 
@@ -185,6 +186,8 @@ NOT_SYMETRIC_METRICS = {
     "macro_f2_score": partial(fbeta_score, average="macro", beta=2),
     "macro_precision_score": partial(precision_score, average="macro"),
     "macro_recall_score": partial(recall_score, average="macro"),
+
+    "confusion_matrix": partial(confusion_matrix, labels=range(3)),
 }
 
 THRESHOLDED_METRICS = {
@@ -516,7 +519,8 @@ def test_confusion_matrix_binary():
         assert_array_almost_equal(mcc, 0.57, decimal=2)
 
     test(y_true, y_pred)
-    test(map(str, y_true), map(str, y_pred))
+    test([str(y) for y in y_true],
+         [str(y) for y in y_pred])
 
 
 def test_matthews_corrcoef_nan():
@@ -636,7 +640,9 @@ def test_confusion_matrix_multiclass():
                                 [4, 24, 3]])
 
     test(y_true, y_pred)
-    test(map(str, y_true), map(str, y_pred), string_type=True)
+    test(list(str(y) for y in y_true),
+         list(str(y) for y in y_pred),
+         string_type=True)
 
 
 def test_confusion_matrix_multiclass_subset_labels():
@@ -817,7 +823,7 @@ def test_losses():
     assert_equal(accuracy_score(y_true, y_pred),
                  1 - zero_one_loss(y_true, y_pred))
 
-    with warnings.catch_warnings(True):
+    with warnings.catch_warnings(record=True):
     # Throw deprecated warning
         assert_equal(zero_one_score(y_true, y_pred),
                      1 - zero_one_loss(y_true, y_pred))
@@ -863,23 +869,23 @@ def test_symmetry():
     y_true, y_pred, _ = make_prediction(binary=True)
 
     # We shouldn't forget any metrics
-    assert_equal(set(SYMETRIC_METRICS).union(NOT_SYMETRIC_METRICS,
+    assert_equal(set(SYMMETRIC_METRICS).union(NOT_SYMMETRIC_METRICS,
                                              THRESHOLDED_METRICS),
                  set(ALL_METRICS))
 
-    assert_equal(set(SYMETRIC_METRICS).intersection(set(NOT_SYMETRIC_METRICS)),
+    assert_equal(set(SYMMETRIC_METRICS).intersection(set(NOT_SYMMETRIC_METRICS)),
                  set([]))
 
     # Symmetric metric
-    for name, metric in SYMETRIC_METRICS.items():
+    for name, metric in SYMMETRIC_METRICS.items():
         assert_almost_equal(metric(y_true, y_pred),
                             metric(y_pred, y_true),
-                            err_msg="%s is not symetric" % name)
+                            err_msg="%s is not symmetric" % name)
 
     # Not symmetric metrics
-    for name, metric in NOT_SYMETRIC_METRICS.items():
-        assert_true(metric(y_true, y_pred) != metric(y_pred, y_true),
-                    msg="%s seems to be symetric" % name)
+    for name, metric in NOT_SYMMETRIC_METRICS.items():
+        assert_true(np.any(metric(y_true, y_pred) != metric(y_pred, y_true)),
+                    msg="%s seems to be symmetric" % name)
 
     # Deprecated metrics
     with warnings.catch_warnings(record=True):
@@ -978,12 +984,27 @@ def test_format_invariance_with_1d_vectors():
         # interpreted as multilabel or multioutput data.
 
 
+def test_clf_single_sample():
+    """Non-regression test: scores should work with a single sample.
+
+    This is important for leave-one-out cross validation.
+    Score functions tested are those that formerly called np.squeeze,
+    which turns an array of size 1 into a 0-d array (!).
+    """
+
+    f2_score = lambda t, p: fbeta_score(t, p, 2)
+    for metric in [accuracy_score, f1_score, f2_score, hamming_loss,
+                   jaccard_similarity_score, precision_recall_fscore_support]:
+        # assert that no exception is thrown
+        score = metric([True], [True])
+
+
 def test_hinge_loss_binary():
     y_true = np.array([-1, 1, 1, -1])
     pred_decision = np.array([-8.5, 0.5, 1.5, -0.3])
     assert_equal(hinge_loss(y_true, pred_decision), 1.2 / 4)
 
-    with warnings.catch_warnings(True):
+    with warnings.catch_warnings(record=True):
         # Test deprecated pos_label
         assert_equal(
             hinge_loss(-y_true, pred_decision),
@@ -993,7 +1014,7 @@ def test_hinge_loss_binary():
     pred_decision = np.array([-8.5, 0.5, 1.5, -0.3])
 
     assert_equal(hinge_loss(y_true, pred_decision), 1.2 / 4)
-    with warnings.catch_warnings(True):
+    with warnings.catch_warnings(record=True):
         # Test deprecated pos_label
         assert_equal(hinge_loss(y_true, pred_decision, pos_label=2,
                                 neg_label=0), 1.2 / 4)
