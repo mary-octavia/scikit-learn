@@ -51,7 +51,7 @@ class BaseSGD(six.with_metaclass(ABCMeta, BaseEstimator, SparseCoefMixin)):
     def __init__(self, loss, penalty='l2', alpha=0.0001, C=1.0,
                  l1_ratio=0.15, fit_intercept=True, n_iter=5, shuffle=False,
                  verbose=0, epsilon=0.1, random_state=None,
-                 learning_rate="optimal", eta0=0.0, power_t=0.5,
+                 learning_rate="optimal", eta0=0.0, power_t=0.5, average=False,
                  warm_start=False, rho=None):
         self.loss = loss
         self.penalty = penalty
@@ -71,6 +71,7 @@ class BaseSGD(six.with_metaclass(ABCMeta, BaseEstimator, SparseCoefMixin)):
         self.verbose = verbose
         self.eta0 = eta0
         self.power_t = power_t
+        self.average = average
         self.warm_start = warm_start
 
         self._validate_params()
@@ -102,6 +103,9 @@ class BaseSGD(six.with_metaclass(ABCMeta, BaseEstimator, SparseCoefMixin)):
         if self.learning_rate in ("constant", "invscaling"):
             if self.eta0 <= 0.0:
                 raise ValueError("eta0 must be > 0")
+        if self.average and self.l1_ratio > 0.0:
+            raise NotImplementedError("Averaging is not supported with l1 "
+                                      "penalty.")
 
         # raises ValueError if not registered
         self._get_penalty_type(self.penalty)
@@ -260,7 +264,7 @@ def _prepare_fit_binary(est, y, i):
     return y_i, coef, intercept
 
 
-def fit_binary(est, i, X, y, alpha, C, learning_rate, n_iter,
+def fit_binary(est, i, X, y, alpha, C, learning_rate, average, n_iter,
                pos_weight, neg_weight, sample_weight):
     """Fit a single binary classifier.
 
@@ -279,7 +283,7 @@ def fit_binary(est, i, X, y, alpha, C, learning_rate, n_iter,
                      int(est.verbose), int(est.shuffle), est.random_state,
                      pos_weight, neg_weight,
                      learning_rate_type, est.eta0,
-                     est.power_t, est.t_, intercept_decay)
+                     est.power_t, est.t_, intercept_decay, average)
 
 
 class BaseSGDClassifier(BaseSGD, LinearClassifierMixin):
@@ -300,7 +304,7 @@ class BaseSGDClassifier(BaseSGD, LinearClassifierMixin):
     def __init__(self, loss="hinge", penalty='l2', alpha=0.0001, l1_ratio=0.15,
                  fit_intercept=True, n_iter=5, shuffle=False, verbose=0,
                  epsilon=DEFAULT_EPSILON, n_jobs=1, random_state=None,
-                 learning_rate="optimal", eta0=0.0, power_t=0.5,
+                 learning_rate="optimal", eta0=0.0, power_t=0.5, average=False,
                  class_weight=None, warm_start=False, rho=None, seed=None):
 
         if seed is not None:
@@ -319,6 +323,7 @@ class BaseSGDClassifier(BaseSGD, LinearClassifierMixin):
                                                 rho=rho,
                                                 learning_rate=learning_rate,
                                                 eta0=eta0, power_t=power_t,
+                                                average=average,
                                                 warm_start=warm_start)
         self.class_weight = class_weight
         self.classes_ = None
@@ -377,6 +382,7 @@ class BaseSGDClassifier(BaseSGD, LinearClassifierMixin):
         elif n_classes == 2:
             self._fit_binary(X, y, alpha=alpha, C=C,
                              learning_rate=learning_rate,
+                             average=self.average,
                              sample_weight=sample_weight, n_iter=n_iter)
         else:
             raise ValueError("The number of class labels must be "
@@ -429,10 +435,10 @@ class BaseSGDClassifier(BaseSGD, LinearClassifierMixin):
         return self
 
     def _fit_binary(self, X, y, alpha, C, sample_weight,
-                    learning_rate, n_iter):
+                    learning_rate, average, n_iter):
         """Fit a binary classifier on X and y. """
         coef, intercept = fit_binary(self, 1, X, y, alpha, C,
-                                     learning_rate, n_iter,
+                                     learning_rate, average, n_iter,
                                      self._expanded_class_weight[1],
                                      self._expanded_class_weight[0],
                                      sample_weight)
@@ -451,7 +457,8 @@ class BaseSGDClassifier(BaseSGD, LinearClassifierMixin):
         # Use joblib to fit OvA in parallel
         result = Parallel(n_jobs=self.n_jobs, verbose=self.verbose)(
             delayed(fit_binary)(self, i, X, y, alpha, C, learning_rate,
-                                n_iter, self._expanded_class_weight[i], 1.,
+                                self.average, n_iter,
+                                self._expanded_class_weight[i], 1.,
                                 sample_weight)
             for i in range(len(self.classes_)))
 
@@ -614,6 +621,10 @@ class SGDClassifier(BaseSGDClassifier, _LearntSelectorMixin):
     power_t : double
         The exponent for inverse scaling learning rate [default 0.5].
 
+    average : bool, optional
+        Whether to perform averaging. Only works with l2 regularization.
+        [default False]
+
     class_weight : dict, {class_label : weight} or "auto" or None, optional
         Preset for the class_weight fit parameter.
 
@@ -648,7 +659,7 @@ class SGDClassifier(BaseSGDClassifier, _LearntSelectorMixin):
     SGDClassifier(alpha=0.0001, class_weight=None, epsilon=0.1, eta0=0.0,
             fit_intercept=True, l1_ratio=0.15, learning_rate='optimal',
             loss='hinge', n_iter=5, n_jobs=1, penalty='l2', power_t=0.5,
-            random_state=None, rho=None, shuffle=False,
+            average=False, random_state=None, rho=None, shuffle=False,
             verbose=0, warm_start=False)
     >>> print(clf.predict([[-0.8, -1]]))
     [1]
@@ -763,7 +774,7 @@ class BaseSGDRegressor(BaseSGD, RegressorMixin):
                  l1_ratio=0.15, fit_intercept=True, n_iter=5, shuffle=False,
                  verbose=0, epsilon=DEFAULT_EPSILON, random_state=None,
                  learning_rate="invscaling", eta0=0.01, power_t=0.25,
-                 warm_start=False, rho=None):
+                 average=False, warm_start=False, rho=None):
         super(BaseSGDRegressor, self).__init__(loss=loss, penalty=penalty,
                                                alpha=alpha, l1_ratio=l1_ratio,
                                                fit_intercept=fit_intercept,
@@ -774,6 +785,7 @@ class BaseSGDRegressor(BaseSGD, RegressorMixin):
                                                rho=rho,
                                                learning_rate=learning_rate,
                                                eta0=eta0, power_t=power_t,
+                                               average=average,
                                                warm_start=False)
 
     def _partial_fit(self, X, y, alpha, C, loss, learning_rate,
@@ -932,7 +944,8 @@ class BaseSGDRegressor(BaseSGD, RegressorMixin):
                                           1.0, 1.0,
                                           learning_rate_type,
                                           self.eta0, self.power_t, self.t_,
-                                          intercept_decay)
+                                          intercept_decay,
+                                          self.average)
 
         self.intercept_ = np.atleast_1d(intercept)
 
@@ -1019,6 +1032,10 @@ class SGDRegressor(BaseSGDRegressor, _LearntSelectorMixin):
     power_t : double, optional
         The exponent for inverse scaling learning rate [default 0.25].
 
+    average : bool, optional
+        Whether to perform averaging. Only works with l2 regularization.
+        [default False]
+
     warm_start : bool, optional
         When set to True, reuse the solution of the previous call to fit as
         initialization, otherwise, just erase the previous solution.
@@ -1043,8 +1060,9 @@ class SGDRegressor(BaseSGDRegressor, _LearntSelectorMixin):
     >>> clf.fit(X, y)
     SGDRegressor(alpha=0.0001, epsilon=0.1, eta0=0.01, fit_intercept=True,
            l1_ratio=0.15, learning_rate='invscaling', loss='squared_loss',
-           n_iter=5, penalty='l2', power_t=0.25, random_state=None, rho=None,
-           shuffle=False, verbose=0, warm_start=False)
+           n_iter=5, penalty='l2', power_t=0.25, average=False,
+           random_state=None, rho=None, shuffle=False, verbose=0,
+           warm_start=False)
 
     See also
     --------

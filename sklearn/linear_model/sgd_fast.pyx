@@ -337,7 +337,8 @@ def plain_sgd(np.ndarray[DOUBLE, ndim=1, mode='c'] weights,
               int learning_rate, double eta0,
               double power_t,
               double t=1.0,
-              double intercept_decay=1.0):
+              double intercept_decay=1.0,
+              bint average=False):
     """Plain SGD for generic loss functions and penalties.
 
     Parameters
