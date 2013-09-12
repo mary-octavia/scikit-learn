@@ -169,9 +169,11 @@ class OneVsRestClassifier(BaseEstimator, ClassifierMixin, MetaEstimatorMixin):
 
     `classes_` : array, shape = [`n_classes`]
         Class labels.
+
     `label_binarizer_` : LabelBinarizer object
         Object used to transform multiclass labels to binary labels and
         vice-versa.
+
     `multilabel_` : boolean
         Whether a OneVsRestClassifier is a multilabel classifier.
     """
@@ -604,3 +606,71 @@ class OutputCodeClassifier(BaseEstimator, ClassifierMixin, MetaEstimatorMixin):
 
         return predict_ecoc(self.estimators_, self.classes_,
                             self.code_book_, X)
+
+
+from scipy.sparse import dia_matrix
+from sklearn.preprocessing import label_binarize
+
+class LabelPowerSetClassifier(BaseEstimator, ClassifierMixin,
+                              MetaEstimatorMixin):
+    """Label power set multilabel strategy
+
+
+    Parameters
+    ----------
+    estimator: classifier estimator object
+        An estimator object implementing a `fit` and a `predict` method.
+
+    Attributes
+    ----------
+    `classes_` : array, shape = [`n_classes`]
+        Class labels.
+
+    """
+    def __init__(self, estimator):
+        self.estimator = estimator
+
+        self.classes_ = None
+
+    def fit(self, X, y):
+        """Fit underlying estimators.
+
+        Parameters
+        ----------
+        X : {array-like, sparse matrix}, shape = [n_samples, n_features]
+            Input training data.
+
+        y : array-like, shape = [n_samples, n_outputs]
+            Output training target in label indicator format
+
+        Returns
+        -------
+        self
+        """
+        X, y = check_arrays(X, y)
+
+        y = label_binarize()
+
+        if not isinstance(estimator, ClassifierMixin):
+            raise ValueError("The underlying base estimator isn't a "
+                             "classifier")
+
+        #
+
+        # Code the output
+        encoding_matrix =
+
+
+    def predict(self, X):
+        """Predict multi-class targets using underlying estimators.
+
+        Parameters
+        ----------
+        X : {array-like, sparse matrix}, shape = [n_samples, n_features]
+            Input data.
+
+        Returns
+        -------
+        y : array-like, shape = [n_samples, n_outputs]
+            Predicted multilabel target.
+        """
