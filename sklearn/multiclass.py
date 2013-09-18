@@ -2,10 +2,11 @@
 Multiclass and multilabel classification strategies
 ===================================================
 
-This module implements multiclass learning algorithms:
+This module implements multiclass / multilabel learning algorithms:
     - one-vs-the-rest / one-vs-all
     - one-vs-one
     - error correcting output codes
+    - label power set
 
 The estimators provided in this module are meta-estimators: they require a base
 estimator to be provided in their constructor. For example, it is possible to
@@ -40,6 +41,7 @@ from .base import MetaEstimatorMixin
 from .preprocessing import LabelBinarizer
 from .metrics.pairwise import euclidean_distances
 from .utils import check_random_state
+from .utils.extmath import safe_sparse_dot
 from .externals.joblib import Parallel
 from .externals.joblib import delayed
 
@@ -608,24 +610,27 @@ class OutputCodeClassifier(BaseEstimator, ClassifierMixin, MetaEstimatorMixin):
                             self.code_book_, X)
 
 
-from sklearn.utils.extmath import safe_sparse_dot
 
 class LabelPowerSetClassifier(BaseEstimator, ClassifierMixin,
                               MetaEstimatorMixin):
     """Label power set multilabel strategy
 
-    This strategy consists in transforming the multilabel classification
-    in a multiclass task. Each class correspond to a unique subset of labels.
+    Label power set is problem transformation method. The multi-label
+    classification task is transformed into a multi-class classification
+    task: each label set presents in the training set
+    is associated a class. The underlying estimator will learn to predict
+    the class associated to each label set.
 
-    TODO add a note on the weakness:
-        - high number of class
-        - could work well in
-    What does it bring?
+    The maximum number of class is bounded by the number of samples and
+    the number of possible label set in the training set. This strategy
+    works well with a small number of labels. However, the learning problem
+    will be ill pose for a high number of label.
 
     Parameters
     ----------
     estimator: classifier estimator object
-        An estimator object implementing a `fit` and a `predict` method.
+        A multi-class estimator object implementing a `fit` and a `predict`
+        method.
 
     Attributes
     ----------
@@ -637,7 +642,7 @@ class LabelPowerSetClassifier(BaseEstimator, ClassifierMixin,
     def __init__(self, estimator):
         self.estimator = estimator
 
-        self.classes_ = None
+        self.label_binarizer_ = None
 
     def fit(self, X, y):
         """Fit underlying estimators.
