@@ -1,17 +1,20 @@
 import numpy as np
 import warnings
 
+from sklearn.cross_validation import train_test_split
+
 from sklearn.utils.testing import assert_array_equal
 from sklearn.utils.testing import assert_equal
 from sklearn.utils.testing import assert_almost_equal
 from sklearn.utils.testing import assert_true
 from sklearn.utils.testing import assert_false
 from sklearn.utils.testing import assert_raises
-
 from sklearn.utils.testing import assert_greater
+
 from sklearn.multiclass import OneVsRestClassifier
 from sklearn.multiclass import OneVsOneClassifier
 from sklearn.multiclass import OutputCodeClassifier
+from sklearn.multiclass import LabelPowerSetClassifier
 
 from sklearn.metrics import precision_score
 from sklearn.metrics import recall_score
@@ -349,3 +352,45 @@ def test_ecoc_gridsearch():
     cv.fit(iris.data, iris.target)
     best_C = cv.best_estimator_.estimators_[0].C
     assert_true(best_C in Cs)
+
+
+def test_lps_binary():
+    X, Y = datasets.make_classification(n_samples=50,
+                                        n_features=20,
+                                        random_state=0)
+    X_train, X_test, Y_train, Y_test = train_test_split(X, Y, random_state=0)
+
+    lps = LabelPowerSetClassifier(LinearSVC(random_state=0))
+    lps.fit(X_train, Y_train)
+    out_lps = lps.predict(X_test)
+    assert_equal(out_lps.shape, Y_test.shape)
+
+
+def test_lpz_multiclass():
+    lp = LabelPowerSetClassifier(LinearSVC(random_state=0))
+    lp.fit(iris.data, iris.target)
+    out_lp = lp.predict(iris.data)
+
+    svc = LinearSVC(random_state=0)
+    svc.fit(iris.data, iris.target)
+    out_svc = svc.predict(iris.data)
+
+    assert_array_equal(out_lp, out_svc)
+
+
+def test_lps_multilabel():
+    X, Y = datasets.make_multilabel_classification(n_samples=50,
+                                                   n_features=20,
+                                                   random_state=0,
+                                                   return_indicator=True)
+
+    X_train, X_test, Y_train, Y_test = train_test_split(X, Y, random_state=0)
+
+    lps = LabelPowerSetClassifier(LinearSVC(random_state=0))
+    lps.fit(X_train, Y_train)
+    out_lps = lps.predict(X_test)
+    assert_equal(out_lps.shape, Y_test.shape)
+
+
+if __name__ == "__main__":
+    test_lps_multilabel()

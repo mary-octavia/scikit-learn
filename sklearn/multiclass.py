@@ -608,13 +608,19 @@ class OutputCodeClassifier(BaseEstimator, ClassifierMixin, MetaEstimatorMixin):
                             self.code_book_, X)
 
 
-from scipy.sparse import dia_matrix
-from sklearn.preprocessing import label_binarize
+from sklearn.utils.extmath import safe_sparse_dot
 
 class LabelPowerSetClassifier(BaseEstimator, ClassifierMixin,
                               MetaEstimatorMixin):
     """Label power set multilabel strategy
 
+    This strategy consists in transforming the multilabel classification
+    in a multiclass task. Each class correspond to a unique subset of labels.
+
+    TODO add a note on the weakness:
+        - high number of class
+        - could work well in
+    What does it bring?
 
     Parameters
     ----------
@@ -623,8 +629,9 @@ class LabelPowerSetClassifier(BaseEstimator, ClassifierMixin,
 
     Attributes
     ----------
-    `classes_` : array, shape = [`n_classes`]
-        Class labels.
+    `label_binarizer_` : LabelBinarizer object
+        Object used to transform the classification task into a multilabel
+        classification task.
 
     """
     def __init__(self, estimator):
@@ -647,19 +654,19 @@ class LabelPowerSetClassifier(BaseEstimator, ClassifierMixin,
         -------
         self
         """
-        X, y = check_arrays(X, y)
-
-        y = label_binarize()
-
-        if not isinstance(estimator, ClassifierMixin):
+        if not isinstance(self.estimator, ClassifierMixin):
             raise ValueError("The underlying base estimator isn't a "
                              "classifier")
 
-        #
+        # Binarize y
+        self.label_binarizer_ = LabelBinarizer()
+        y_binary = self.label_binarizer_.fit_transform(y)
 
-        # Code the output
-        encoding_matrix =
+        # Code in the label power set
+        encoding_matrix = np.exp2(np.arange(y_binary.shape[1])).T
+        y_coded = safe_sparse_dot(y_binary, encoding_matrix, dense_output=True)
 
+        self.estimator.fit(X, y_coded)
 
     def predict(self, X):
         """Predict multi-class targets using underlying estimators.
@@ -674,3 +681,14 @@ class LabelPowerSetClassifier(BaseEstimator, ClassifierMixin,
         y : array-like, shape = [n_samples, n_outputs]
             Predicted multilabel target.
         """
+        y_coded = self.estimator.predict(X)
+        n_classes = len(self.label_binarizer_.classes_)
+        n_samples = X.shape[0]
+
+        y_decoded = np.empty((X.shape[0], n_classes), dtype=np.int)
+        for i in range(n_samples):
+            for j, label in enumerate(np.binary_repr(y_coded[i],
+                                                     width=n_classes)):
+                y_decoded[i, n_classes - 1 - j] = label
+
+        return self.label_binarizer_.inverse_transform(y_decoded)
