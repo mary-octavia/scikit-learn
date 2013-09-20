@@ -353,11 +353,6 @@ def test_ecoc_gridsearch():
     best_C = cv.best_estimator_.estimators_[0].C
     assert_true(best_C in Cs)
 
-def test_lps_exception():
-    lps = LabelPowerSetClassifier(LinearRegression())
-    assert_raises(ValueError, lps.fit, iris.data, iris.target)
-
-
 
 def test_lps_binary():
     X, Y = datasets.make_classification(n_samples=50,
@@ -395,7 +390,3 @@ def test_lps_multilabel():
     lps.fit(X_train, Y_train)
     out_lps = lps.predict(X_test)
     assert_equal(out_lps.shape, Y_test.shape)
-
-
-if __name__ == "__main__":
-    test_lps_multilabel()

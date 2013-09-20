@@ -622,9 +622,9 @@ class LabelPowerSetClassifier(BaseEstimator, ClassifierMixin,
     the class associated to each label set.
 
     The maximum number of class is bounded by the number of samples and
-    the number of possible label set in the training set. This strategy
+    the number of possible label sets in the training set. This strategy
     works well with a small number of labels. However, the learning problem
-    will be ill pose for a high number of label.
+    will become ill pose for a high number of label.
 
     Parameters
     ----------
@@ -659,10 +659,6 @@ class LabelPowerSetClassifier(BaseEstimator, ClassifierMixin,
         -------
         self
         """
-        if not isinstance(self.estimator, ClassifierMixin):
-            raise ValueError("The underlying base estimator isn't a "
-                             "classifier")
-
         # Binarize y
         self.label_binarizer_ = LabelBinarizer()
         y_binary = self.label_binarizer_.fit_transform(y)
