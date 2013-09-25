@@ -610,21 +610,20 @@ class OutputCodeClassifier(BaseEstimator, ClassifierMixin, MetaEstimatorMixin):
                             self.code_book_, X)
 
 
-
 class LabelPowerSetClassifier(BaseEstimator, ClassifierMixin,
                               MetaEstimatorMixin):
-    """Label power set multilabel strategy
+    """Label power set multi-label classification strategy
 
     Label power set is problem transformation method. The multi-label
     classification task is transformed into a multi-class classification
     task: each label set presents in the training set
-    is associated to one class. The underlying estimator will learn to predict
+    is associated to a class. The underlying estimator will learn to predict
     the class associated to each label set.
 
     The maximum number of class is bounded by the number of samples and
     the number of possible label sets in the training set. This strategy
-    works well with a small number of labels. However, the learning problem
-    will become ill pose for a high number of label.
+    allows to take into account the correlation between the labels contrarily
+    to one-vs-the-rest, also called binary relevance.
 
     Parameters
     ----------

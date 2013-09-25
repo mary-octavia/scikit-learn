@@ -275,25 +275,25 @@ Below is an example of multiclass learning using Output-Codes::
 Label power set
 ===============
 
-:class:`LabelPowerSetClassifier` constructs one classifier on a multiclass
-problem, where each class is a label set. It's a problem transformation
-method. At prediction time, the classifier predict the most relevant
-class, which is translated in the corresponding label set.
+:class:`LabelPowerSetClassifier` is problem transformation method and
+constructs one classifier on a multi-class problem, where each class is a label
+set. At prediction time, the classifier predict the most relevant
+class which is translated to the corresponding label set.
 Since the number of generated class is equal to O(min(2^n_labels), n_samples),
-ths method suffers from the combinatorial explosion of possible label set.
+this method suffers from the combinatorial explosion of possible label set.
 However, this allows to take into account the label correlation contrarily
 to One-Vs-The-Rest, also called binary relevance.
 
 
 Multiclass learning
 -------------------
-Binary relevance could be used for multi-class classification, but this is
+Label power set can be used for multi-class classification, but this is
 equivalent to a nop.
 
 Multilabel learning
 -------------------
 
-Below is an example of multiclass learning using
+Below is an example of multi-class learning using
 :class:`LabelPowerSetClassifier`:
 
   >>> from sklearn.datasets import make_multilabel_classification
