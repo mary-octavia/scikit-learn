@@ -618,7 +618,7 @@ class LabelPowerSetClassifier(BaseEstimator, ClassifierMixin,
     Label power set is problem transformation method. The multi-label
     classification task is transformed into a multi-class classification
     task: each label set presents in the training set
-    is associated a class. The underlying estimator will learn to predict
+    is associated to one class. The underlying estimator will learn to predict
     the class associated to each label set.
 
     The maximum number of class is bounded by the number of samples and

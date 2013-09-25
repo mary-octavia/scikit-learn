@@ -19,6 +19,7 @@ from sklearn.multiclass import LabelPowerSetClassifier
 from sklearn.metrics import precision_score
 from sklearn.metrics import recall_score
 
+
 from sklearn.svm import LinearSVC
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.linear_model import (LinearRegression, Lasso, ElasticNet, Ridge,
@@ -388,5 +389,6 @@ def test_lps_multilabel():
 
     lps = LabelPowerSetClassifier(LinearSVC(random_state=0))
     lps.fit(X_train, Y_train)
-    out_lps = lps.predict(X_test)
-    assert_equal(out_lps.shape, Y_test.shape)
+    y_test_pred = lps.predict(X_test)
+    assert_equal(y_test_pred.shape, Y_test.shape)
+    assert_greater(precision_score(Y_test, y_test_pred), 0.4)
