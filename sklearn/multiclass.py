@@ -638,6 +638,13 @@ class LabelPowerSetClassifier(BaseEstimator, ClassifierMixin,
         Object used to transform the classification task into a multilabel
         classification task.
 
+    References
+    ----------
+
+    .. [1] Tsoumakas, G., & Katakis, I. (2007). "Multi-label classification:
+           An overview." International Journal of Data Warehousing and Mining
+           (IJDWM), 3(3), 1-13.
+
     """
     def __init__(self, estimator):
         self.estimator = estimator
