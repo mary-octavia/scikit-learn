@@ -894,6 +894,7 @@ Pairwise metrics
     multiclass.OneVsRestClassifier
     multiclass.OneVsOneClassifier
     multiclass.OutputCodeClassifier
+    multiclass.LabelPowerSetClassifier
 
 .. autosummary::
     :toctree: generated

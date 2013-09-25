@@ -118,8 +118,9 @@ indicator format.
 One-Vs-The-Rest
 ===============
 
-This strategy, also known as **one-vs-all**, is implemented in
-:class:`OneVsRestClassifier`.  The strategy consists in fitting one classifier
+This strategy, also known as **one-vs-all** or as **binary relevance**, is
+implemented in :class:`OneVsRestClassifier`.  The strategy consists in fitting
+one classifier
 per class. For each classifier, the class is fitted against all the other
 classes. In addition to its computational efficiency (only `n_classes`
 classifiers are needed), one advantage of this approach is its
@@ -151,9 +152,7 @@ Multilabel learning
 -------------------
 
 :class:`OneVsRestClassifier` also supports multilabel classification.
-To use this feature, feed the classifier a list of tuples containing
-target labels, like in the example below.
-
+To use this feature, feed the classifier with a binary indicator matrix.
 
 .. figure:: ../auto_examples/images/plot_multilabel_1.png
     :target: ../auto_examples/plot_multilabel.html
@@ -271,3 +270,42 @@ Below is an example of multiclass learning using Output-Codes::
     .. [3] "The Elements of Statistical Learning",
         Hastie T., Tibshirani R., Friedman J., page 606 (second-edition)
         2008.
+
+
+Label power set
+===============
+
+:class:`LabelPowerSetClassifier` constructs one classifier on a multiclass
+problem, where each class is a label set. It's a problem transformation
+method. At prediction time, the classifier predict the most relevant
+class, which is translated in the corresponding label set.
+Since the number of generated class is equal to O(min(2^n_labels), n_samples),
+ths method suffers from the combinatorial explosion of possible label set.
+However, this allows to take into account the label correlation contrarily
+to One-Vs-The-Rest, also called binary relevance.
+
+
+Multiclass learning
+-------------------
+Binary relevance could be used for multi-class classification, but this is
+equivalent to a nop.
+
+Multilabel learning
+-------------------
+
+Below is an example of multiclass learning using
+:class:`LabelPowerSetClassifier`:
+
+  >>> from sklearn.datasets import make_multilabel_classification
+  >>> from sklearn.multiclass import LabelPowerSetClassifier
+  >>> from sklearn.svm import LinearSVC
+  >>> from sklearn.cross_validation import train_test_split
+  >>> from sklearn.metrics import jaccard_similarity_score
+  >>> X, y = make_multilabel_classification(return_indicator=True,
+  ...                                       random_state=0)
+  >>> X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0)
+  >>> classifier = LabelPowerSetClassifier(LinearSVC(random_state=0))
+  >>> classifier.fit(X_train, y_train)
+  >>> y_pred = classifier.predict(X_test)
+  >>> jaccard_similarity_score(y_test, y_pred)  # doctest: +ELLIPSIS
+  0.486...
