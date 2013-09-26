@@ -275,18 +275,22 @@ Below is an example of multiclass learning using Output-Codes::
 Label power set
 ===============
 
-:class:`LabelPowerSetClassifier` is problem transformation method and
-constructs one classifier on a multi-class problem, where each class is a label
-set. At prediction time, the classifier predict the most relevant
+:class:`LabelPowerSetClassifier` is a problem transformation method: each
+label set of the training is associated to one class.
+Once the output is tranformed, the :class:`LabelPowerSetClassifier
+constructs one classifier on the multi-class task. At prediction time, the
+classifier predicts the most relevant
 class which is translated to the corresponding label set.
-Since the number of generated class is equal to O(min(2^n_labels), n_samples),
-this method suffers from the combinatorial explosion of possible label set.
+Since the number of generated classes is equal to
+O(min(2^n_labels), n_samples),
+this method suffers from the combinatorial explosion of possible label sets.
 However, this allows to take into account the label correlation contrarily
 to One-Vs-The-Rest, also called binary relevance.
 
 
 Multiclass learning
 -------------------
+
 Label power set can be used for multi-class classification, but this is
 equivalent to a nop.
 

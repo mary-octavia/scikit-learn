@@ -3,7 +3,7 @@ Multiclass and multilabel classification strategies
 ===================================================
 
 This module implements multiclass / multilabel learning algorithms:
-    - one-vs-the-rest / one-vs-all
+    - one-vs-the-rest / one-vs-all / binary relevance
     - one-vs-one
     - error correcting output codes
     - label power set
@@ -614,7 +614,7 @@ class LabelPowerSetClassifier(BaseEstimator, ClassifierMixin,
                               MetaEstimatorMixin):
     """Label power set multi-label classification strategy
 
-    Label power set is problem transformation method. The multi-label
+    Label power set is a problem transformation method. The multi-label
     classification task is transformed into a multi-class classification
     task: each label set presents in the training set
     is associated to a class. The underlying estimator will learn to predict
@@ -658,7 +658,7 @@ class LabelPowerSetClassifier(BaseEstimator, ClassifierMixin,
         X : {array-like, sparse matrix}, shape = [n_samples, n_features]
             Input training data.
 
-        y : array-like, shape = [n_samples, n_outputs]
+        y : array-like, shape = [n_samples] or [n_samples, n_outputs]
             Output training target in label indicator format
 
         Returns
@@ -676,7 +676,7 @@ class LabelPowerSetClassifier(BaseEstimator, ClassifierMixin,
         self.estimator.fit(X, y_coded)
 
     def predict(self, X):
-        """Predict multi-class targets using underlying estimators.
+        """Predict targets using the underlying estimator.
 
         Parameters
         ----------
@@ -685,14 +685,14 @@ class LabelPowerSetClassifier(BaseEstimator, ClassifierMixin,
 
         Returns
         -------
-        y : array-like, shape = [n_samples, n_outputs]
+        y : array-like, shape = [n_samples] or [n_samples, n_outputs]
             Predicted multilabel target.
         """
         y_coded = self.estimator.predict(X)
         n_classes = len(self.label_binarizer_.classes_)
         n_samples = X.shape[0]
 
-        y_decoded = np.empty((X.shape[0], n_classes), dtype=np.int)
+        y_decoded = np.empty((n_samples, n_classes), dtype=np.int)
         for i in range(n_samples):
             for j, label in enumerate(np.binary_repr(y_coded[i],
                                                      width=n_classes)):
