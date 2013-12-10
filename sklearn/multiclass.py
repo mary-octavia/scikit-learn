@@ -2,7 +2,7 @@
 Multiclass and multilabel classification strategies
 ===================================================
 
-This module implements multiclass / multilabel learning algorithms:
+This module implements multiclassand multilabel learning algorithms:
     - one-vs-the-rest / one-vs-all / binary relevance
     - one-vs-one
     - error correcting output codes
@@ -620,14 +620,14 @@ class LabelPowerSetClassifier(BaseEstimator, ClassifierMixin,
     is associated to a class. The underlying estimator will learn to predict
     the class associated to each label set.
 
-    The maximum number of class is bounded by the number of samples and
+    The maximum number of classes is bounded by the number of samples and
     the number of possible label sets in the training set. This strategy
     allows to take into account the correlation between the labels contrarily
     to one-vs-the-rest, also called binary relevance.
 
     Parameters
     ----------
-    estimator: classifier estimator object
+    estimator : classifier estimator object
         A multi-class estimator object implementing a `fit` and a `predict`
         method.
 

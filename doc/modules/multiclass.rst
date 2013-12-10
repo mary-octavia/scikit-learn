@@ -291,8 +291,8 @@ to One-Vs-The-Rest, also called binary relevance.
 Multiclass learning
 -------------------
 
-Label power set can be used for multi-class classification, but this is
-equivalent to a nop.
+Label power set can be used for multi-class classification, but this have
+no effect.
 
 Multilabel learning
 -------------------
