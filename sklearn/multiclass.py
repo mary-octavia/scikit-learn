@@ -621,9 +621,11 @@ class LabelPowerSetClassifier(BaseEstimator, ClassifierMixin,
     the class associated to each label set.
 
     The maximum number of classes is bounded by the number of samples and
-    the number of possible label sets in the training set. This strategy
-    allows to take into account the correlation between the labels contrarily
-    to one-vs-the-rest, also called binary relevance.
+    the number of possible label sets in the training set. Thus leading
+    to a maximum of O(min(2^n_labels, n_samples)) generated classes.
+    This method suffers from the combinatorial explosion of possible label sets.
+    However, this strategy may take into account the correlation between the
+    labels unlike one-vs-the-rest, also called binary relevance.
 
     Parameters
     ----------
@@ -689,13 +691,17 @@ class LabelPowerSetClassifier(BaseEstimator, ClassifierMixin,
             Predicted multilabel target.
         """
         y_coded = self.estimator.predict(X)
-        n_classes = len(self.label_binarizer_.classes_)
-        n_samples = X.shape[0]
+        binary_code_size = len(self.label_binarizer_.classes_)
 
-        y_decoded = np.empty((n_samples, n_classes), dtype=np.int)
-        for i in range(n_samples):
-            for j, label in enumerate(np.binary_repr(y_coded[i],
-                                                     width=n_classes)):
-                y_decoded[i, n_classes - 1 - j] = label
+        if binary_code_size == 2 and self.label_binarizer_:
+            binary_code_size = 1
+
+        shifting_vector =  2 ** np.arange(binary_code_size)
+
+        # Shift the binary representation of a class
+        y_shifted = (y_coded[:, np.newaxis] // shifting_vector).astype(np.int)
+
+        # Decode y by checking the appropriate bit
+        y_decoded = np.bitwise_and(0x1, y_shifted)
 
         return self.label_binarizer_.inverse_transform(y_decoded)
