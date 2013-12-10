@@ -364,7 +364,13 @@ def test_lps_binary():
     lps = LabelPowerSetClassifier(LinearSVC(random_state=0))
     lps.fit(X_train, Y_train)
     out_lps = lps.predict(X_test)
+
+    svc = LinearSVC(random_state=0)
+    svc.fit(X_train, Y_train)
+    out_svc = svc.predict(X_test)
+
     assert_equal(out_lps.shape, Y_test.shape)
+    assert_array_equal(out_lps, out_svc)
 
 
 def test_lps_multiclass():
